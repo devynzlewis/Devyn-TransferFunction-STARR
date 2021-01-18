@@ -1,4 +1,4 @@
-# Devyn Dowler-Lewis
+# Devyn Dowler-Lewis the biggest dumb dumb
 
 
 import numpy as np
