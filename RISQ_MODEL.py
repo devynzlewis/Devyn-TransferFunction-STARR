@@ -1,10 +1,25 @@
 # Devyn Dowler-Lewis the biggest dumb dumb
 
+from random import seed
+from random import random
+seed(1)
 
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
+import tensorflow.keras.backend as K
 
+
+def my_loss_fn(y_true, y_pred):
+    temp = tf.py_function(func=approx, inp=[y_pred], Tout=tf.float32)
+
+    squared_difference = tf.square(y_true - temp)
+    print(temp)
+    return tf.reduce_mean(squared_difference, axis=-1)
+
+def works(x):
+    y = approx(x)
+    return y
 
 def Single_RISQ_CALC(theta_b,theta_t,theta_ap,eta_sqrd,tau_sqrd,tau_ap):
     U_f = np.zeros((2, 2), dtype=complex)
@@ -18,6 +33,36 @@ def Single_RISQ_CALC(theta_b,theta_t,theta_ap,eta_sqrd,tau_sqrd,tau_ap):
     U_f[:, :] = B.dot(S_phase_theta)
 
     return U_f
+
+
+def Practice_Single_RISQ_CALC(theta_ap):
+    tau_sqrd = 1 / 2
+    eta_sqrd = 1 / 2
+    theta_t = np.pi / 3
+    theta_b = np.pi / 3
+    tau_ap = 1 / 2
+
+    U_f = np.zeros((2, 2), dtype=complex)
+
+    S_BS = generate_S_DB(theta_b, theta_t, eta_sqrd, tau_sqrd)
+    S_phase_phi = generate_S_AP(theta_ap, tau_ap)
+    S_phase_theta = generate_S_AP(0, tau_ap)
+
+    A = S_BS.dot(S_phase_phi)
+    B = A.dot(S_BS)
+    U_f[:, :] = B.dot(S_phase_theta)
+
+    out = abs((U_f[0][0]) ** 2)
+
+    out = np.absolute(out)
+
+    return out
+
+
+def practice_loss(angle_out):
+    temp = Practice_Single_RISQ_CALC(angle_out)
+    return temp - 0.5
+
 
 
 def hadamard_loss(P_a_c_Single):
@@ -35,7 +80,16 @@ def hadamard_loss(P_a_c_Single):
     print("Loss value is: ", loss)
     return out
 
-
+def new_hadamard_loss(theta):
+    y = approx(theta)
+    # count = 0
+    # for i in range(0, 100):
+    #     rand = random()
+    # if rand > y:
+    #     count = count
+    # else:
+    #     count = count + 1.0
+    return y
 def createTFModel():
     model = tf.keras.Sequential([
         tf.keras.Input(shape=(1,), dtype=tf.dtypes.float32, name='commands_input'),
@@ -45,7 +99,7 @@ def createTFModel():
     ])
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.05)
-    loss = tf.keras.losses.MeanSquaredError()
+    loss = my_loss_fn
     model.compile(optimizer=optimizer, loss=loss)
 
     return model
@@ -161,6 +215,7 @@ def plotRISQCurve(theta_ap, P_a_c, theta_single, P_a_c_Single, dashedLine):
     plt.figure(1)
     plt.plot(theta_ap, P_a_c, "-b", label="|\u03B1|^2")
     plt.plot(theta_single, P_a_c_Single, "o")
+    plt.plot(theta_ap, approx(theta_ap), '-g')
     # plt.plot(theta_ap, P_a_l, "-g", label="|\u03B2|^2")
     plt.plot(theta_ap, dashedLine, 'r--')
     plt.legend(loc="upper right")
@@ -173,6 +228,10 @@ def plotRISQCurve(theta_ap, P_a_c, theta_single, P_a_c_Single, dashedLine):
     plt.show()
 
 
+def approx(x):
+    a = 0.59
+    y = 1.45 * (1 / (a * np.sqrt(2 * np.pi))) * K.exp((-1) * ((x)**2 / (2 * a**2)))
+    return y
 
 
 
@@ -189,7 +248,7 @@ theta_b = np.pi/3
 tau_ap = 1/2
 theta_ap = np.linspace(-np.pi, np.pi, 5000)
 print("Please enter an offset angle:")
-theta_single = input()
+theta_single = 1.1
 theta_single = float(theta_single)
 
 N = len(dummyU[0][0][:])
@@ -228,23 +287,26 @@ phase_P_a_l = np.degrees(phase_P_a_l)
 # _____________________________________________________________________________________
 model = createTFModel()
 
-commands = np.array([[theta_single]], dtype=np.float32)
+commands = np.array([[0]], dtype=np.float32)
 
-expected_outputs = np.array([[0.65]], dtype=np.float32)
+expected_outputs = np.array([[0.5]], dtype=np.float32)
 
 plotRISQCurve(theta_ap, P_a_c, theta_single, P_a_c_Single, dashedLine)
 
 for i in range(1, 10):
+    outputs = []
     history = model.fit(x=commands,
                         y=expected_outputs,
                         epochs=6,
                         verbose=0)
     a = model([commands])
     a = a.numpy()
-
+    for layer in model.layers:
+        keras_function = K.function([model.input], [layer.output])
+        outputs.append(keras_function([commands, 1]))
+    print(outputs)
     Single_U = Single_RISQ_CALC(theta_b, theta_t, a, eta_stacked, tau_stacked, tau_ap)
     P_a_c_Single = abs((Single_U[0][0]) ** 2)
-
     plotRISQCurve(theta_ap, P_a_c, a, P_a_c_Single, dashedLine)
 
 
