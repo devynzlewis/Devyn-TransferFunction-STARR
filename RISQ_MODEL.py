@@ -12,6 +12,8 @@ import tensorflow.keras.backend as K
 
 # Loss Function
 def my_loss_fn(y_true, y_pred):
+    # Currently y_true is the target sampling probability (0.5 for hadamard)
+    # y_pred is an angle
     temp = tf.py_function(func=approx, inp=[y_pred], Tout=tf.float32)
 
     squared_difference = tf.square(y_true - temp)
@@ -202,7 +204,7 @@ def plotRISQCurve(theta_ap, P_a_c, theta_single, P_a_c_Single, dashedLine):
     plt.figure(1)
     plt.plot(theta_ap, P_a_c, "-b", label="|\u03B1|^2")
     plt.plot(theta_single, P_a_c_Single, "o")
-    plt.plot(theta_ap, approx(theta_ap), '-g')
+    # plt.plot(theta_ap, approx(theta_ap), '-g')
     # plt.plot(theta_ap, P_a_l, "-g", label="|\u03B2|^2")
     plt.plot(theta_ap, dashedLine, 'r--')
     plt.legend(loc="upper right")
@@ -216,9 +218,10 @@ def plotRISQCurve(theta_ap, P_a_c, theta_single, P_a_c_Single, dashedLine):
 
 # Created a gaussian that looks similar to the RISQ curve. Tried to sample from this to side-step the problem, didn't work
 def approx(x):
-    a = 0.59
-    y = 1.45 * (1 / (a * np.sqrt(2 * np.pi))) * K.exp((-1) * ((x)**2 / (2 * a**2)))
-    return y
+    # a = 0.59
+    # y = 1.45 * (1 / (a * np.sqrt(2 * np.pi))) * K.exp((-1) * ((x)**2 / (2 * a**2)))
+    # return y
+    return x
 
 
 
