@@ -1,4 +1,4 @@
-# Devyn Dowler-Lewis the biggest dumb dumb
+
 
 from random import seed
 from random import random
@@ -10,6 +10,7 @@ import tensorflow as tf
 import tensorflow.keras.backend as K
 
 
+# Loss Function
 def my_loss_fn(y_true, y_pred):
     temp = tf.py_function(func=approx, inp=[y_pred], Tout=tf.float32)
 
@@ -17,10 +18,7 @@ def my_loss_fn(y_true, y_pred):
     print(temp)
     return tf.reduce_mean(squared_difference, axis=-1)
 
-def works(x):
-    y = approx(x)
-    return y
-
+# Calculates a single transmission probability
 def Single_RISQ_CALC(theta_b,theta_t,theta_ap,eta_sqrd,tau_sqrd,tau_ap):
     U_f = np.zeros((2, 2), dtype=complex)
 
@@ -34,7 +32,7 @@ def Single_RISQ_CALC(theta_b,theta_t,theta_ap,eta_sqrd,tau_sqrd,tau_ap):
 
     return U_f
 
-
+# non-functional attempt to prevent complex number issue with tf
 def Practice_Single_RISQ_CALC(theta_ap):
     tau_sqrd = 1 / 2
     eta_sqrd = 1 / 2
@@ -59,12 +57,7 @@ def Practice_Single_RISQ_CALC(theta_ap):
     return out
 
 
-def practice_loss(angle_out):
-    temp = Practice_Single_RISQ_CALC(angle_out)
-    return temp - 0.5
-
-
-
+# Sampling function
 def hadamard_loss(P_a_c_Single):
     samples = np.zeros(100)
     for i in range(0,100):
@@ -80,16 +73,8 @@ def hadamard_loss(P_a_c_Single):
     print("Loss value is: ", loss)
     return out
 
-def new_hadamard_loss(theta):
-    y = approx(theta)
-    # count = 0
-    # for i in range(0, 100):
-    #     rand = random()
-    # if rand > y:
-    #     count = count
-    # else:
-    #     count = count + 1.0
-    return y
+
+# Initialize model
 def createTFModel():
     model = tf.keras.Sequential([
         tf.keras.Input(shape=(1,), dtype=tf.dtypes.float32, name='commands_input'),
@@ -99,6 +84,7 @@ def createTFModel():
     ])
 
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.05)
+    # Custom loss
     loss = my_loss_fn
     model.compile(optimizer=optimizer, loss=loss)
 
@@ -106,7 +92,7 @@ def createTFModel():
 
 # ________________________________________________________________________________________
 
-
+# Adapted Matteo Code
 def RISQ_Calc(theta_b,theta_t,theta_ap,eta_sqrd,tau_sqrd,tau_ap):
     N = len(theta_ap)
     U_f = np.zeros((2, 2, 5000), dtype=complex)
@@ -126,7 +112,7 @@ def RISQ_Calc(theta_b,theta_t,theta_ap,eta_sqrd,tau_sqrd,tau_ap):
     return U_f
 #-------------------------RISQ_Calc DEPENDS ON ALL--------------------------------------------------------------------------
 
-
+# Adapted Matteo Code
 def generate_S_DB(theta_b, theta_t, eta_sqrd, tau_sqrd):
     eta = np.sqrt(eta_sqrd)
     tau = np.sqrt(tau_sqrd)
@@ -145,6 +131,7 @@ def generate_S_DB(theta_b, theta_t, eta_sqrd, tau_sqrd):
 
 
 #-------------------S_DB DEPENDS ON THESE----------------------------------------------------------------------
+# Adapted Matteo Code
 def generate_transfer(S):
     a = S[0][0]
     b = S[0][1]
@@ -155,7 +142,7 @@ def generate_transfer(S):
 
     return np.array([[1/c, -d/c], [a/c, -det/c]])
 
-
+# Adapted Matteo Code
 def generate_scattering(T):
     a = T[0][0]
     b = T[0][1]
@@ -166,7 +153,7 @@ def generate_scattering(T):
 
     return np.array([[c / a, det / a], [1 / a, -b / a]])
 
-
+# Adapted Matteo Code
 def generate_S_b(theta, tau, kappa):
     t_b = tau
 
@@ -178,7 +165,7 @@ def generate_S_b(theta, tau, kappa):
 
     return np.array([[t_b, sPrime_b], [s_b, tPrime_b]])
 
-
+# Adapted Matteo Code
 def generate_S_t(theta, tau, kappa):
     t_t = tau*np.exp(-1j * theta)
 
@@ -190,7 +177,7 @@ def generate_S_t(theta, tau, kappa):
 
     return np.array([[t_t, sPrime_t], [s_t, tPrime_t]])
 
-
+# Adapted Matteo Code
 def generate_S_I(eta, gamma):
     t_I = eta
     sPrime_I = gamma
@@ -201,7 +188,7 @@ def generate_S_I(eta, gamma):
 
 
 #--------------------------------------------------------------------------------------------------------------------
-
+# Adapted Matteo Code
 def generate_S_AP(theta, tau):
     kappa = 1j * np.sqrt(1-tau**2)
 
@@ -227,7 +214,7 @@ def plotRISQCurve(theta_ap, P_a_c, theta_single, P_a_c_Single, dashedLine):
     # plt.plot(theta_ap, phase_P_a_c, "-y")
     plt.show()
 
-
+# Created a gaussian that looks similar to the RISQ curve. Tried to sample from this to side-step the problem, didn't work
 def approx(x):
     a = 0.59
     y = 1.45 * (1 / (a * np.sqrt(2 * np.pi))) * K.exp((-1) * ((x)**2 / (2 * a**2)))
@@ -258,7 +245,7 @@ dummyU[0][1][:] = np.cos(theta_ap)
 
 dashedLine = np.zeros(5000)
 dashedLine[:] = 0.5
-print(N)
+
 
 U_RISQ = RISQ_Calc(theta_b, theta_t, theta_ap, eta_stacked, tau_stacked, tau_ap)
 
@@ -284,7 +271,7 @@ phase_P_a_l = np.reshape(np.angle(U_RISQ[0, 1, :]), [N,])
 phase_P_a_l = np.degrees(phase_P_a_l)
 
 
-# _____________________________________________________________________________________
+# TF Stuff starts here. Above is mostly creating matteo's graph_____________________________________________________________________________________
 model = createTFModel()
 
 commands = np.array([[0]], dtype=np.float32)
