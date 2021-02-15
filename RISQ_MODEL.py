@@ -107,7 +107,7 @@ def RISQ_Calc(theta_b,theta_t,theta_ap,eta_sqrd,tau_sqrd,tau_ap):
         # U_f[:, :, i] = S_BS * S_phase_phi * S_BS * S_phase_theta
         A = S_BS.dot(S_phase_phi)
         B = A.dot(S_BS)
-        U_f[:, :, i] = B.dot(S_phase_theta)
+        U_f[:, :, i] = B
 
 
 
