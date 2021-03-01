@@ -107,7 +107,7 @@ def RISQ_Calc(theta_b,theta_t,theta_ap,eta_sqrd,tau_sqrd,tau_ap):
         # U_f[:, :, i] = S_BS * S_phase_phi * S_BS * S_phase_theta
         A = S_BS.dot(S_phase_phi)
         B = A.dot(S_BS)
-        U_f[:, :, i] = B
+        U_f[:, :, i] = S_BS
 
 
 
@@ -121,15 +121,17 @@ def generate_S_DB(theta_b, theta_t, eta_sqrd, tau_sqrd):
     kappa = 1j * np.sqrt(1 - tau_sqrd)
     gamma = 1j * np.sqrt(1 - eta_sqrd)
 
-    T_b = generate_transfer(generate_S_b(theta_b, tau, kappa))
-    T_t = generate_transfer(generate_S_t(theta_t, tau, kappa))
-    T_I = generate_transfer(generate_S_I(eta, gamma))
+    T_b = generate_S_b(theta_b, tau, kappa)
+    T_t = generate_S_t(theta_t, tau, kappa)
+    T_I = generate_S_I(eta, gamma)
 
     # S_DB = T_b * T_I * T_t
     A = T_b.dot(T_I)
     S_DB = A.dot(T_t)
 
-    return np.transpose(generate_scattering(S_DB))
+    print(T_t)
+
+    return S_DB
 
 
 #-------------------S_DB DEPENDS ON THESE----------------------------------------------------------------------
@@ -205,7 +207,7 @@ def plotRISQCurve(theta_ap, P_a_c, theta_single, P_a_c_Single, dashedLine):
     plt.plot(theta_ap, P_a_c, "-b", label="|\u03B1|^2")
     plt.plot(theta_single, P_a_c_Single, "o")
     # plt.plot(theta_ap, approx(theta_ap), '-g')
-    # plt.plot(theta_ap, P_a_l, "-g", label="|\u03B2|^2")
+    plt.plot(theta_ap, P_a_l, "-g", label="|\u03B2|^2")
     plt.plot(theta_ap, dashedLine, 'r--')
     plt.legend(loc="upper right")
     plt.title("Output State Probabilities for a |0> Input State")
@@ -233,7 +235,7 @@ dummyU = np.zeros((2,2,5000))
 
 tau_stacked = 1/2
 eta_stacked = 1/2
-theta_t = np.pi/3
+theta_t = 0.2
 theta_b = np.pi/3
 tau_ap = 1/2
 theta_ap = np.linspace(-np.pi, np.pi, 5000)
@@ -275,7 +277,7 @@ phase_P_a_l = np.degrees(phase_P_a_l)
 
 
 # TF Stuff starts here. Above is mostly creating matteo's graph_____________________________________________________________________________________
-model = createTFModel()
+# model = createTFModel()
 
 commands = np.array([[0]], dtype=np.float32)
 
@@ -283,21 +285,21 @@ expected_outputs = np.array([[0.5]], dtype=np.float32)
 
 plotRISQCurve(theta_ap, P_a_c, theta_single, P_a_c_Single, dashedLine)
 
-for i in range(1, 10):
-    outputs = []
-    history = model.fit(x=commands,
-                        y=expected_outputs,
-                        epochs=6,
-                        verbose=0)
-    a = model([commands])
-    a = a.numpy()
-    for layer in model.layers:
-        keras_function = K.function([model.input], [layer.output])
-        outputs.append(keras_function([commands, 1]))
-    print(outputs)
-    Single_U = Single_RISQ_CALC(theta_b, theta_t, a, eta_stacked, tau_stacked, tau_ap)
-    P_a_c_Single = abs((Single_U[0][0]) ** 2)
-    plotRISQCurve(theta_ap, P_a_c, a, P_a_c_Single, dashedLine)
+# for i in range(1, 10):
+#     outputs = []
+#     history = model.fit(x=commands,
+#                         y=expected_outputs,
+#                         epochs=6,
+#                         verbose=0)
+#     a = model([commands])
+#     a = a.numpy()
+#     for layer in model.layers:
+#         keras_function = K.function([model.input], [layer.output])
+#         outputs.append(keras_function([commands, 1]))
+#     print(outputs)
+#     Single_U = Single_RISQ_CALC(theta_b, theta_t, a, eta_stacked, tau_stacked, tau_ap)
+#     P_a_c_Single = abs((Single_U[0][0]) ** 2)
+#     plotRISQCurve(theta_ap, P_a_c, a, P_a_c_Single, dashedLine)
 
 
 
