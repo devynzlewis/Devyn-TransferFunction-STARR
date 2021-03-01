@@ -205,7 +205,7 @@ def plotRISQCurve(theta_ap, P_a_c, theta_single, P_a_c_Single, dashedLine):
     plt.plot(theta_ap, P_a_c, "-b", label="|\u03B1|^2")
     plt.plot(theta_single, P_a_c_Single, "o")
     # plt.plot(theta_ap, approx(theta_ap), '-g')
-    # plt.plot(theta_ap, P_a_l, "-g", label="|\u03B2|^2")
+    plt.plot(theta_ap, P_a_l, "-g", label="|\u03B2|^2")
     plt.plot(theta_ap, dashedLine, 'r--')
     plt.legend(loc="upper right")
     plt.title("Output State Probabilities for a |0> Input State")
