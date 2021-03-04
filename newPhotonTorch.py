@@ -5,6 +5,28 @@ from tqdm.notebook import tqdm # [pip install tqdm]
 import torch # [conda install pytorch -c pytorch, only python 3!]
 import photontorch as pt # [pip install photontorch] my simulation/optimization library
 
+def generate_transfer(S):
+    a = S[0][0]
+    b = S[0][1]
+    c = S[1][0]
+    d = S[1][1]
+
+    det = np.linalg.det(S)
+
+    return np.array([[1/c, -d/c], [a/c, -det/c]])
+
+def generate_scattering(T):
+    a = T[0][0]
+    b = T[0][1]
+    c = T[1][0]
+    d = T[1][1]
+
+    det = np.linalg.det(T)
+
+    return np.array([[c / a, det / a], [1 / a, -b / a]])
+
+
+
 
 class DirectionalCoupler(pt.Component):
     r""" A directional coupler is a component with 4 ports that introduces no delays
@@ -71,9 +93,9 @@ class RBS(pt.Component):
         self,
         tau_stacked= 0.5,
         eta_stacked=1 / 2,
-        theta_t= 0.2,
+        theta_t= np.pi/3 - 0.3,
         theta_b= np.pi/3,
-        trainable=False,
+        trainable=True,
         name=None,
     ):
         super(RBS, self).__init__(name=name)
@@ -92,13 +114,13 @@ class RBS(pt.Component):
 
     def set_S(self, S):
         # Create 2x2 matrix SB/S1___________________________________________________________________________
-
         E0 = self.tau
         E1 = self.kappa * np.exp(-1j * self.theta_b / 2)
         E2 = -np.conjugate(self.kappa)*np.exp(-1j * self.theta_b/2)
         E3 = self.tau * np.exp(-1j * self.theta_b)
 
         S_B = np.array([[E0, E1], [E2, E3]])
+        T_B = generate_transfer(S_B)
 
         # Create 2x2 matrix SI/S2
         E0 = self.eta
@@ -107,19 +129,22 @@ class RBS(pt.Component):
         E3 = self.eta
 
         S_I = np.array([[E0, E1], [E2, E3]])
+        T_I = generate_transfer(S_I)
 
         # Create 2x2 matrix ST/S3
-        E0 = self.tau * np.exp(-1j * self.theta_t)
-        E1 = -np.conjugate(self.kappa)*np.exp(-1j * self.theta_t/2)
-        E2 = self.kappa * np.exp(-1j * self.theta_t / 2)
+        # Have to extract float from trainable parameter
+        theta_Ft = self.theta_t.item()
+
+        E0 = self.tau * np.exp(-1j * theta_Ft)
+        E1 = -np.conjugate(self.kappa)*np.exp(-1j * theta_Ft/2)
+        E2 = self.kappa * np.exp(-1j * theta_Ft / 2)
         E3 = self.tau
         S_T = np.array([[E0, E1], [E2, E3]])
+        T_T = generate_transfer(S_T)
 
 
-        A = S_B.dot(S_I)
-        S_DB = A.dot(S_T)
-
-        print(S_T)
+        A = T_B.dot(T_I)
+        S_DB = np.transpose(generate_scattering(A.dot(T_T)))
 
 
         S[0, 0, 1, 0] = np.real(S_DB[0, 0])
@@ -143,16 +168,19 @@ class RBS(pt.Component):
         S[1, 0, 3, 2] = np.imag(S_DB[1, 1])
 
 
+
+
 class testCoupler(pt.Network):
     def __init__(self, name=None):
         super(testCoupler, self).__init__(name=name)
 
         self.source = pt.Source()
-        self.detector1 = self.detector2 = self.detector3 = pt.Detector()
-        self.dc1 = RBS()
+        self.through = self.add = self.drop = pt.Detector()
+        self.dc1 = RBS(theta_t=np.pi/3)
+        self.dc2 = RBS(theta_t=np.pi/3)
 
-        self.link('source:0', '0:dc1:1', '0:detector1')
-        self.link('detector2:0', '3:dc1:2', '0:detector3')
+        self.link('source:0', '0:dc1:1', '0:dc2:1', '0:through')
+        self.link('add:0', '3:dc1:2', '3:dc2:2', '0:drop')
 
 
 

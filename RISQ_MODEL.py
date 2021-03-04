@@ -121,17 +121,17 @@ def generate_S_DB(theta_b, theta_t, eta_sqrd, tau_sqrd):
     kappa = 1j * np.sqrt(1 - tau_sqrd)
     gamma = 1j * np.sqrt(1 - eta_sqrd)
 
-    T_b = generate_S_b(theta_b, tau, kappa)
-    T_t = generate_S_t(theta_t, tau, kappa)
-    T_I = generate_S_I(eta, gamma)
+    T_b = generate_transfer(generate_S_b(theta_b, tau, kappa))
+    T_t = generate_transfer(generate_S_t(theta_t, tau, kappa))
+    T_I = generate_transfer(generate_S_I(eta, gamma))
 
     # S_DB = T_b * T_I * T_t
     A = T_b.dot(T_I)
-    S_DB = A.dot(T_t)
+    S_DB = np.transpose(generate_scattering(A.dot(T_t)))
 
     print(T_t)
 
-    return S_DB
+    return S_DB.dot(S_DB)
 
 
 #-------------------S_DB DEPENDS ON THESE----------------------------------------------------------------------
@@ -235,7 +235,7 @@ dummyU = np.zeros((2,2,5000))
 
 tau_stacked = 1/2
 eta_stacked = 1/2
-theta_t = 0.2
+theta_t = np.pi/3
 theta_b = np.pi/3
 tau_ap = 1/2
 theta_ap = np.linspace(-np.pi, np.pi, 5000)
