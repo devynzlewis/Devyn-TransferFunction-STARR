@@ -463,74 +463,74 @@ def plot_detected(num_rings=5):
     plt.show()
 
 
-# # Time Domain 2 ring crow filter____________________________________________________________________________________
-# device = 'cpu' # 'cpu' or 'cuda'
-# crow = Crow(num_rings=2, random_parameters=True).to(device)
-#
-# neff = np.sqrt(12.1)
-# wl = 1.55e-6
-# dt = 0.5e-14
-# total_time = 2e-12
-# time = np.arange(0,total_time,dt)
-#
-# num_epochs = 100 # number of training cycles
-# learning_rate = 0.1 # multiplication factor for the gradients during optimization.
-# lossfunc = torch.nn.MSELoss()
-# optimizer = torch.optim.Adam(crow.parameters(), learning_rate)
-# print(crow.parameters())
-# # define the simulation environment:
-# env = pt.Environment(
-#     wavelength = 1.5e-6,
-#     freqdomain=False, # we will be doing frequency domain simulations
-# )
-# # set the global simulation environment:
-# pt.set_environment(env)
-#
-# train_env = pt.Environment(
-#     wavelength = 1e-6, #[m]
-#     time=time,
-#     freqdomain=False, # we will be doing frequency domain simulations
-#     grad=True, # we need to enable gradients to be able to optimize
-# )
-#
-# # over the trainin domain:
-# with train_env:
-#     detected = crow(source=1)[:,0,:,0] # single timestep, all wls, (drop detector=0; through detector=2), single batch
-#     crow.plot(detected)
-#     plt.show()
-#
-# total_power_out = detected.data.cpu().numpy()[-1].sum()
-# target = np.ones(2)*total_power_out/2
-# target = np.insert(target, 0, 0)
-#
-# target = torch.tensor(target, device=crow.device, dtype=torch.get_default_dtype())
-#
-# # loop over the training cycles:
-# with train_env:
-#     for epoch in range(num_epochs):
-#         print(epoch)
-#         optimizer.zero_grad()
-#         detected = crow(source=1)[-1,0,:,0] # get the last timestep, the only wavelength, all detectors, the only batch
-#         loss = lossfunc(detected, target) # calculate the loss (error) between detected and target
-#         print(detected)
-#         print(target)
-#         loss.backward() # calculate the resulting gradients for all the parameters of the network
-#         optimizer.step() # update the networks parameters with the gradients
-#         del detected, loss # free up memory (important for GPU)
-#         if epoch % 10 == 0:
-#             detected = crow(source=1)  # get all timesteps, the only wavelength, all detectors, the only batch
-#             crow.plot(detected)
-#             plt.show()
-#
-#
-#
-#
-#
-# with train_env:
-#     detected = crow(source=1) # get all timesteps, the only wavelength, all detectors, the only batch
-#     crow.plot(detected)
-#     plt.show()
-#
+# Time Domain 2 ring crow filter____________________________________________________________________________________
+device = 'cpu' # 'cpu' or 'cuda'
+crow = Crow(num_rings=2, random_parameters=True).to(device)
+
+neff = np.sqrt(12.1)
+wl = 1.55e-6
+dt = 0.5e-14
+total_time = 2e-12
+time = np.arange(0,total_time,dt)
+
+num_epochs = 100 # number of training cycles
+learning_rate = 0.1 # multiplication factor for the gradients during optimization.
+lossfunc = torch.nn.MSELoss()
+optimizer = torch.optim.Adam(crow.parameters(), learning_rate)
+print(crow.parameters())
+# define the simulation environment:
+env = pt.Environment(
+    wavelength = 1.5e-6,
+    freqdomain=False, # we will be doing frequency domain simulations
+)
+# set the global simulation environment:
+pt.set_environment(env)
+
+train_env = pt.Environment(
+    wavelength = 1e-6, #[m]
+    time=time,
+    freqdomain=False, # we will be doing frequency domain simulations
+    grad=True, # we need to enable gradients to be able to optimize
+)
+
+# over the trainin domain:
+with train_env:
+    detected = crow(source=1)[:,0,:,0] # single timestep, all wls, (drop detector=0; through detector=2), single batch
+    crow.plot(detected)
+    plt.show()
+
+total_power_out = detected.data.cpu().numpy()[-1].sum()
+target = np.ones(2)*total_power_out/2
+target = np.insert(target, 0, 0)
+
+target = torch.tensor(target, device=crow.device, dtype=torch.get_default_dtype())
+
+# loop over the training cycles:
+with train_env:
+    for epoch in range(num_epochs):
+        print(epoch)
+        optimizer.zero_grad()
+        detected = crow(source=1)[-1,0,:,0] # get the last timestep, the only wavelength, all detectors, the only batch
+        loss = lossfunc(detected, target) # calculate the loss (error) between detected and target
+        print(detected)
+        print(target)
+        loss.backward() # calculate the resulting gradients for all the parameters of the network
+        optimizer.step() # update the networks parameters with the gradients
+        del detected, loss # free up memory (important for GPU)
+        if epoch % 10 == 0:
+            detected = crow(source=1)  # get all timesteps, the only wavelength, all detectors, the only batch
+            crow.plot(detected)
+            plt.show()
+
+
+
+
+
+with train_env:
+    detected = crow(source=1) # get all timesteps, the only wavelength, all detectors, the only batch
+    crow.plot(detected)
+    plt.show()
+
 dt = 0.5e-14
 total_time = 2e-12
 time = np.arange(0,total_time,dt)
